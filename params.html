@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>赤鶴 CHIHE · 參數設定</title>
+<script src="ethers.min.js"></script>
+<script src="fix-data.js"></script>
+<style>
+:root{--chi:#D9251E;--chi2:#FF5A3C;--gold:#F2A03D;--bg:#14090A;--card:#241314;--line:#3A1E1F;--txt:#F5EAE3;--dim:#9C8178;--ok:#37d67a}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--txt);padding:14px;font-size:14px}
+h1{color:var(--gold);font-size:18px;margin:6px 0 8px}
+h3{font-size:14px;margin:10px 0 6px}
+.sub{color:var(--dim);font-size:12px;margin-bottom:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0}
+.banner{background:rgba(242,160,61,.1);border:1px solid rgba(242,160,61,.35);color:#ffd48a;padding:10px;border-radius:10px;font-size:12px;line-height:1.8;margin:10px 0}
+button{background:linear-gradient(135deg,var(--chi2),var(--chi));color:#fff;border:none;padding:12px;border-radius:9px;font-weight:700;cursor:pointer;margin:5px 0 0;font-size:13px;width:100%;font-family:inherit}
+button.b{background:#2a1a1b;color:#e0c8c0}
+button:disabled{opacity:.4}
+.out{background:#0a0506;border:1px dashed var(--line);border-radius:10px;padding:9px;font-family:monospace;font-size:11px;white-space:pre-wrap;margin:7px 0;color:#c9b3ac;max-height:340px;overflow:auto;line-height:1.6}
+table{width:100%;border-collapse:collapse;font-size:11px;margin:6px 0}
+td,th{border:1px solid var(--line);padding:4px 6px}
+th{background:#0d0708;color:var(--dim);text-align:left}
+</style>
+</head>
+<body>
+<h1>赤鶴 CHIHE · 參數設定</h1>
+<div class="sub">Market + Mining 完整參數</div>
+
+<div class="banner">
+<b>需設定的參數</b>
+<table>
+<tr><th>參數</th><th>當前</th><th>目標</th></tr>
+<tr><td>price</td><td>0.01</td><td>0.014050</td></tr>
+<tr><td>maxFeeRate</td><td>0</td><td>900 (90%)</td></tr>
+<tr><td>baseThreshold</td><td>0</td><td>300 U</td></tr>
+<tr><td>feeWindow</td><td>0</td><td>30</td></tr>
+<tr><td>minWindowUsdt</td><td>0</td><td>30 U</td></tr>
+<tr><td>projectFeeBp</td><td>0</td><td>100 (10%)</td></tr>
+<tr><td>contribFeeBp</td><td>0</td><td>300 (30%)</td></tr>
+<tr><td>marketStarted</td><td>0</td><td>1（開市）</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h3>① 連接錢包（owner）</h3>
+<button onclick="connect()">连接钱包</button>
+<div class="out" id="conn">未連線</div>
+</div>
+
+<div class="card" style="border-color:rgba(55,214,122,.4)">
+<h3 style="color:var(--gold)">② 一鍵設定所有參數</h3>
+<button id="btnGo" onclick="doAll()" disabled>开始設定（8 步）</button>
+<div class="out" id="out">—</div>
+</div>
+
+<div class="card">
+<h3>③ 驗證</h3>
+<button class="b" onclick="verify()">重新驗證</button>
+<div class="out" id="vout">—</div>
+</div>
+
+<script>
+var provider, signer, acct=null;
+var K=FIX.deployed.market, M=FIX.deployed.mining;
+function $(i){return document.getElementById(i);}
+function L(id,t){var e=$(id);e.textContent+='\n'+t;e.scrollTop=e.scrollHeight;}
+function clr(id){$(id).textContent='';}
+
+var MARKET_ABI=[
+ 'function price() view returns(uint256)',
+ 'function feeRate() view returns(uint256)',
+ 'function maxFeeRate() view returns(uint256)',
+ 'function baseThreshold() view returns(uint256)',
+ 'function feeWindow() view returns(uint256)',
+ 'function minWindowUsdt() view returns(uint256)',
+ 'function projectFeeBp() view returns(uint256)',
+ 'function contribFeeBp() view returns(uint256)',
+ 'function marketStarted() view returns(uint256)',
+ 'function setFeeRate(uint256)',
+ 'function setMaxFeeRate(uint256)',
+ 'function setBaseThreshold(uint256)',
+ 'function setFeeWindow(uint256)',
+ 'function setMinWindowUsdt(uint256)',
+ 'function setProjectFeeBp(uint256)',
+ 'function setContribFeeBp(uint256)',
+ 'function setMarketStarted(bool)',
+ 'function proposePrice(uint256)',
+ 'function executePrice()',
+ 'function setPriceDelay(uint256)',
+ 'function priceDelay() view returns(uint256)'
+];
+
+async function connect(){
+  if(!window.ethereum){L('conn','❌ 未偵測到錢包');return;}
+  try{
+    provider=new ethers.providers.Web3Provider(window.ethereum);
+    var net=await provider.getNetwork();
+    if(net.chainId!==56){L('conn','❌ 非 BSC 主網');return;}
+    await window.ethereum.request({method:'eth_requestAccounts'});
+    signer=provider.getSigner();
+    acct=await signer.getAddress();
+    var b=Number(ethers.utils.formatEther(await provider.getBalance(acct)));
+    L('conn','✅ 已連線: '+acct);
+    L('conn','   BNB: '+b.toFixed(4));
+    if(b<0.02){L('conn','⚠️ BNB 偏低');}
+    else{$('btnGo').disabled=false;L('conn','✅ 可執行');}
+    await verify();
+  }catch(e){L('conn','❌ '+String(e.message||e).slice(0,120));}
+}
+
+async function doAll(){
+  clr('out');
+  if(!signer){L('out','❌ 請連接錢包');return;}
+  $('btnGo').disabled=true;
+  try{
+    var c=new ethers.Contract(K, MARKET_ABI, signer);
+    var steps=[
+      ['projectFeeBp = 100 (10%)', ()=>c.setProjectFeeBp(100,{gasLimit:200000})],
+      ['contribFeeBp = 300 (30%)', ()=>c.setContribFeeBp(300,{gasLimit:200000})],
+      ['baseThreshold = 300 U', ()=>c.setBaseThreshold(ethers.utils.parseUnits('300',18),{gasLimit:200000})],
+      ['maxFeeRate = 900 (90%)', ()=>c.setMaxFeeRate(900,{gasLimit:200000})],
+      ['feeWindow = 30', ()=>c.setFeeWindow(30,{gasLimit:200000})],
+      ['minWindowUsdt = 30 U', ()=>c.setMinWindowUsdt(ethers.utils.parseUnits('30',18),{gasLimit:200000})],
+      ['priceDelay = 0（立即生效）', ()=>c.setPriceDelay(0,{gasLimit:200000})],
+      ['proposePrice(0.014050)', ()=>c.proposePrice('14050000000000000',{gasLimit:200000})],
+      ['executePrice（執行價格）', ()=>c.executePrice({gasLimit:200000})],
+      ['setMarketStarted(true)', ()=>c.setMarketStarted(true,{gasLimit:200000})],
+    ];
+    for(var i=0;i<steps.length;i++){
+      var name=steps[i][0], fn=steps[i][1];
+      L('out', (i+1)+'. '+name+' ...');
+      var tx=await fn(); await tx.wait();
+      L('out','   ✅ '+tx.hash.slice(0,20)+'...');
+    }
+    L('out','');
+    L('out','🎉 全部設定完成！');
+    await verify();
+  }catch(e){
+    L('out','');
+    L('out','❌ 失敗: '+String(e.reason||e.message||e).slice(0,250));
+  }
+  $('btnGo').disabled=false;
+}
+
+async function verify(){
+  clr('vout');
+  try{
+    var rp=provider||new ethers.providers.JsonRpcProvider('https://bsc-dataseed.binance.org');
+    var c=new ethers.Contract(K, MARKET_ABI, rp);
+    L('vout','=== Market 參數 ===');
+    var p=await c.price();
+    L('vout','  price:          '+(Number(p)/1e18)+' '+(Number(p)===14050000000000000?'✅':'⚠️ 應 0.014050'));
+    var fr=await c.feeRate(); L('vout','  feeRate:        '+fr.toString()+'‰');
+    var mfr=await c.maxFeeRate(); L('vout','  maxFeeRate:     '+mfr.toString()+'‰ '+(Number(mfr)===900?'✅':'⚠️ 應 900'));
+    var bt=await c.baseThreshold(); L('vout','  baseThreshold:  '+(Number(ethers.utils.formatUnits(bt,18)))+' U '+(Number(ethers.utils.formatUnits(bt,18))===300?'✅':'⚠️ 應 300'));
+    var fw=await c.feeWindow(); L('vout','  feeWindow:      '+fw.toString()+' '+(Number(fw)===30?'✅':'⚠️ 應 30'));
+    var mwu=await c.minWindowUsdt(); L('vout','  minWindowUsdt:  '+(Number(ethers.utils.formatUnits(mwu,18)))+' U '+(Number(ethers.utils.formatUnits(mwu,18))===30?'✅':'⚠️ 應 30'));
+    var pfb=await c.projectFeeBp(); L('vout','  projectFeeBp:   '+pfb.toString()+'‰ '+(Number(pfb)===100?'✅':'⚠️ 應 100'));
+    var cfb=await c.contribFeeBp(); L('vout','  contribFeeBp:   '+cfb.toString()+'‰ '+(Number(cfb)===300?'✅':'⚠️ 應 300'));
+    var ms=await c.marketStarted(); L('vout','  marketStarted:  '+ms.toString()+' '+(Number(ms)===1?'✅ 已開市':'⚠️ 未開市'));
+  }catch(e){L('vout','❌ '+String(e.message||e).slice(0,150));}
+}
+</script>
+</body>
+</html>
