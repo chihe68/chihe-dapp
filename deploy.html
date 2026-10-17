@@ -143,14 +143,23 @@ async function deployAll(){
   var fP=new ethers.ContractFactory(CHIHE.Proxy.abi, CHIHE.Proxy.bytecode, signer);
 
   try{
-    // ① Token
+    // ① Token（Impl + Proxy）
     L('out','=== ① Token ===');
     var fT=new ethers.ContractFactory(CHIHE.Token.abi, CHIHE.Token.bytecode, signer);
-    var token=await fT.deploy({gasLimit:3000000}); await token.deployed();
-    ADD.token=token.address;
-    L('out','  impl: '+token.address);
-    var tx=await token.initialize({gasLimit:600000}); await tx.wait();
+    var tImpl=await fT.deploy({gasLimit:3000000}); await tImpl.deployed();
+    ADD.tokenImpl=tImpl.address;
+    L('out','  impl: '+tImpl.address);
+    L('out','  ⏳ 部署代理 + initialize...');
+    var tInitData=new ethers.utils.Interface(CHIHE.Token.abi).encodeFunctionData('initialize',[]);
+    var tProxy=await fP.deploy(tImpl.address, tInitData, {gasLimit:3000000}); await tProxy.deployed();
+    ADD.token=tProxy.address;
+    L('out','  proxy: '+ADD.token);
+    var tC=new ethers.Contract(ADD.token, CHIHE.Token.abi, signer);
+    var tName=await tC.name();
+    var tOwner=await tC.owner();
     L('out','  ✅ Token 完成');
+    L('out','     name: '+tName);
+    L('out','     owner: '+tOwner);
 
     // ② Mining
     L('out','');
