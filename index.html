@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <script>
 // ★ 版本戳（每次发布递增）—— 用于破 CDN / 浏览器快取
-window.CHIHE_VER='20261017a';
+window.CHIHE_VER='20261017b';
 // ★★★ 自動破快取（v20261008e）：若 URL 無 v 參數 → 自動加參數重定向一次
 //   解決 TP 等內建瀏覽器「頑固快取」問題
 (function(){
@@ -637,7 +637,7 @@ button{cursor:pointer;font-family:inherit}
   <div class="section-title" data-i18n="invite.title">我的推广</div>
   <div class="invite-card"><div class="invite-icon"><i class="ph ph-link"></i></div><div class="invite-info"><div class="invite-tag" data-i18n="invite.link">我的推广链接(一键绑定)</div><div class="invite-val" id="inviteUrl" style="color:var(--purple2);font-size:12px;word-break:break-all;white-space:normal"><span data-i18n="common.connectToShow">连接钱包后显示</span></div></div><button class="invite-copy" onclick="copyText(document.getElementById('inviteUrl').textContent)" data-i18n="invite.copy">复制</button></div>
   <div class="invite-card"><div class="invite-icon"><i class="ph ph-identification-card"></i></div><div class="invite-info"><div class="invite-tag" data-i18n="invite.id">我的推广ID(钱包地址)</div><div class="invite-val" id="inviteAddr" data-i18n="common.notConnected">未连接</div></div><button class="invite-copy" onclick="copyText(document.getElementById('inviteAddr').getAttribute('data-full')||document.getElementById('inviteAddr').textContent)" data-i18n="invite.copy">复制</button></div>
-  <div class="invite-card"><div class="invite-icon"><i class="ph ph-file-text"></i></div><div class="invite-info"><div class="invite-tag" data-i18n="invite.contract">CHIHE 合约地址</div><div class="invite-val">0x9F60B80980588B95f55d8E1Fa6A6299e6BDc0bd1</div></div><button class="invite-copy" onclick="copyText('0x9F60B80980588B95f55d8E1Fa6A6299e6BDc0bd1')" data-i18n="invite.copy">复制</button></div>
+  <div class="invite-card"><div class="invite-icon"><i class="ph ph-file-text"></i></div><div class="invite-info"><div class="invite-tag" data-i18n="invite.contract">CHIHE 合约地址</div><div class="invite-val">0x245C1bE2FDF0fD7a97b2Af4b9fd6d42c96cB515F</div></div><button class="invite-copy" onclick="copyText('0x245C1bE2FDF0fD7a97b2Af4b9fd6d42c96cB515F')" data-i18n="invite.copy">复制</button></div>
   <div class="muted" style="margin:12px 0;line-height:1.6"><span data-i18n="invite.desc">分享此推广ID给好友,当好友使用您的地址绑定并购买矿机后,您将获得收益.</span></div>
   <div class="card" style="background:linear-gradient(135deg,rgba(16,185,129,0.2),rgba(5,150,105,0.1));display:flex;align-items:center;justify-content:space-between">
     <div class="row"><i class="ph ph-gift" style="font-size:28px"></i><span style="font-weight:700;font-size:16px" data-i18n="invite.count">累计邀请</span></div>
@@ -691,7 +691,7 @@ button{cursor:pointer;font-family:inherit}
     <div class="row" style="margin-bottom:12px"><div class="g-icon" style="background:rgba(16,185,129,0.15);color:var(--green)"><i class="ph ph-user"></i></div><div style="font-weight:700;font-size:16px" data-i18n="node.identity">身份:矿工</div></div>
     <div class="invite-card" style="margin-bottom:6px"><div class="invite-icon"><i class="ph ph-link"></i></div><div class="invite-info"><div class="invite-tag" data-i18n="node.website">官网链接</div><div class="invite-val" id="siteLinkVal">—</div></div><button class="invite-copy" onclick="copyText(document.getElementById('siteLinkVal').textContent)" data-i18n="invite.copy">复制</button></div>
     <div class="invite-card" style="margin-bottom:6px"><div class="invite-icon"><i class="ph ph-identification-card"></i></div><div class="invite-info"><div class="invite-tag" data-i18n="invite.promoId">推广ID</div><div class="invite-val" id="nodeAddr" data-i18n="common.notConnected">未连接</div></div><button class="invite-copy" onclick="copyText(document.getElementById('nodeAddr').getAttribute('data-full')||document.getElementById('nodeAddr').textContent)" data-i18n="invite.copy">复制</button></div>
-    <div class="invite-card"><div class="invite-icon"><i class="ph ph-file-text"></i></div><div class="invite-info"><div class="invite-tag" data-i18n="invite.contract">合约地址</div><div class="invite-val">0x9F60B80980588B95f55d8E1Fa6A6299e6BDc0bd1</div></div><button class="invite-copy" onclick="copyText('0x9F60B80980588B95f55d8E1Fa6A6299e6BDc0bd1')" data-i18n="invite.copy">复制</button></div>
+    <div class="invite-card"><div class="invite-icon"><i class="ph ph-file-text"></i></div><div class="invite-info"><div class="invite-tag" data-i18n="invite.contract">合约地址</div><div class="invite-val">0x245C1bE2FDF0fD7a97b2Af4b9fd6d42c96cB515F</div></div><button class="invite-copy" onclick="copyText('0x245C1bE2FDF0fD7a97b2Af4b9fd6d42c96cB515F')" data-i18n="invite.copy">复制</button></div>
   </div>
   <div class="card" id="reinvestCard"><div class="section-title" data-i18n="mine.reinvest">复投</div><div class="muted" style="margin-bottom:12px"><span data-i18n="mine.reinvestDesc">产能产完后复投重新获得3倍产能.</span></div><button class="btn btn-gold" onclick="reinvest()" data-i18n="mine.reinvestBtn">复投</button></div>
   <div class="card"><div class="section-title" data-i18n="node.status">节点状态</div><div id="nodeStatusContent"><div class="muted" style="text-align:center;padding:12px" data-i18n="common.connectFirst">请先连接钱包</div></div></div>
@@ -748,12 +748,12 @@ setTimeout(function(){
 <script>
 const C={chainId:56,rpc:'https://bsc-dataseed1.binance.org:443',
   allocator:'0xBf05C08f2186ECD5119211f6cD17ED89FA3BA912',
-  tokens:{CHIHE:'0x9F60B80980588B95f55d8E1Fa6A6299e6BDc0bd1',USDT:'0x55d398326f99059fF775485246999027B3197955'},
+  tokens:{CHIHE:'0x245C1bE2FDF0fD7a97b2Af4b9fd6d42c96cB515F',USDT:'0x55d398326f99059fF775485246999027B3197955'},
   // ===== CHIHE v2.0 合約地址（2026-09-17 切換）=====
   // 新架構：Token + Mining + Swap + Info（照 MMB 架構）
-  contracts:{mining:'0x0745f350358d1478C28626235b062Eafc6b49648',token:'0x9F60B80980588B95f55d8E1Fa6A6299e6BDc0bd1',
-    referral:'0x0745f350358d1478C28626235b062Eafc6b49648',swap:'0x3aA629408F4f61A6F16E72D4CCc92D39d1FCAB3c',market:'0xD9783711fD81B36650dd76a62042E9775e79D14D',pool:'0xC4dd2Fcd7bC66e92EdC43951863252fDf536424C'},
-  pair:'0xCAaF3c41a40103a23Eeaa4BbA468AF3cF5b0e0D8'};
+  contracts:{mining:'0x46E2B24376BDf379A2e0Fa4dF9ccF2263056bd9C',token:'0x245C1bE2FDF0fD7a97b2Af4b9fd6d42c96cB515F',
+    referral:'0x46E2B24376BDf379A2e0Fa4dF9ccF2263056bd9C',swap:'0x0000000000000000000000000000000000000000',market:'0x38aE88BC9A93E6E9B1568c3BE340B3183064dADA',pool:'0x0000000000000000000000000000000000000000'},
+  pair:'0x0000000000000000000000000000000000000000'};
 
 // ★★★ 錢包優先的 read provider（v20260930c）
 //   大陸地區公共 RPC 被牆 → 統一走錢包 eth_call
@@ -1902,7 +1902,7 @@ async function doCHIHETransfer(){
   try{
     const myAddr=await signer.getAddress();
     const refer=C.contracts.referral; // Proxy地址(字符串)
-    const tk=new ethers.Contract(C.contracts.nnbtoken||'0x9F60B80980588B95f55d8E1Fa6A6299e6BDc0bd1',['function allowance(address,address) view returns(uint256)','function approve(address,uint256)'],signer);
+    const tk=new ethers.Contract(C.contracts.nnbtoken||'0x245C1bE2FDF0fD7a97b2Af4b9fd6d42c96cB515F',['function allowance(address,address) view returns(uint256)','function approve(address,uint256)'],signer);
     const amtWei=ethers.utils.parseUnits(amt.toFixed(6),18);
     const allow=await tk.allowance(myAddr,refer);
     if(allow.lt(amtWei)){
@@ -2106,7 +2106,7 @@ const MARKET_ABI=[
   'function getFeeWindow() view returns (uint256)',
   'function getMinWindowUsdt() view returns (uint256)'
 ];
-function marketAddr(){ return C.contracts.market || '0xD9783711fD81B36650dd76a62042E9775e79D14D'; }
+function marketAddr(){ return C.contracts.market || '0x38aE88BC9A93E6E9B1568c3BE340B3183064dADA'; }
 
 // ★ 載入並顯示動態費率
 async function loadDynamicFee(){
@@ -2819,7 +2819,7 @@ async function cancelMyOrder(orderId){
 }
 
 // ===== V34 貢獻值邏輯 =====
-const CONTRIB_MGR='0x0745f350358d1478C28626235b062Eafc6b49648';
+const CONTRIB_MGR='0x46E2B24376BDf379A2e0Fa4dF9ccF2263056bd9C';
 const CONTRIB_ABI=[
   'function contribInfo(address) view returns (uint256 cap,uint256 used,uint256 bought,uint256 due,bool active)',
   'function buyContribution(uint256) external',
@@ -3338,7 +3338,7 @@ function loadSubscribedProgress(){
   const USDT='0x55d398326f99059fF775485246999027B3197955';
   const W1='0xD6260d9F8dD0dB7049B40198f41442Ec2c1EEc43';
   const W2='0x0870C934895E4a5F2e461589929516075a8981d4';
-  const CHIHE='0x9F60B80980588B95f55d8E1Fa6A6299e6BDc0bd1';
+  const CHIHE='0x245C1bE2FDF0fD7a97b2Af4b9fd6d42c96cB515F';
   const DEAD='0x000000000000000000000000000000000000dEaD';
   const sel='0x70a08231';
   if(!window.ethereum){
