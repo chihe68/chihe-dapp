@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <script>
 // ★ 版本戳（每次发布递增）—— 用于破 CDN / 浏览器快取
-window.CHIHE_VER='20261017b';
+window.CHIHE_VER='20261017c';
 // ★★★ 自動破快取（v20261008e）：若 URL 無 v 參數 → 自動加參數重定向一次
 //   解決 TP 等內建瀏覽器「頑固快取」問題
 (function(){
@@ -75,11 +75,11 @@ window.CHIHE_VER='20261017b';
   document.createElement=function(t){ return stamp(_ce(t)); };
 })();
 </script>
-<link rel="icon" type="image/x-icon" href="favicon.ico?v=20261017b">
-<link rel="shortcut icon" href="favicon.ico?v=20261017b">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=20261017b">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=20261017b">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=20261017b">
+<link rel="icon" type="image/x-icon" href="favicon.ico?v=20261017c">
+<link rel="shortcut icon" href="favicon.ico?v=20261017c">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=20261017c">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=20261017c">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=20261017c">
 <meta name="theme-color" content="#D9251E">
 <title>赤鶴 CHIHE · 离火生金</title>
 <!-- ★ 圖標字體：本地優先（大陸地區 CDN 常被牆）-->
@@ -972,7 +972,7 @@ async function loadAllData(){
   }
 
   // ===== 全域資料（不依賴錢包）=====
-  add('price',       MINING, _SEL.currentEffectivePrice + BigInt(now).toString(16).padStart(64,'0'));
+  add('price',       (C.contracts.market||MINING), _SEL.currentEffectivePrice + BigInt(now).toString(16).padStart(64,'0'));
   add('feeRate',     MINING, _SEL.effectiveTradeFeeRate);
   add('totalSupply', TOKEN,  _SEL.totalSupply);
   add('reserves',    PAIR,   _SEL.getReserves);
@@ -1291,7 +1291,8 @@ async function connectWallet(){
 async function loadPrice(){
   // 读链上价格/费率（优先走钱包 eth_call，无跨域；fallback fetch）
   try{
-    const V35 = C.contracts.referral; // 业务合约入口（Proxy）
+    // ★ 修復：價格讀 Market 合約（Mining 有自己的 price，不是市場價）
+    const V35 = C.contracts.market || C.contracts.referral;
     const now = Math.floor(Date.now()/1000);
     const arg = BigInt(now).toString(16).padStart(64,'0');
     const priceData = '0xe4b137bc' + arg;      // currentEffectivePrice(now)
@@ -2206,7 +2207,7 @@ async function loadMarketInfo(){
     // ★ 改用批次 RPC（一次拿價格 + 餘額）
     const now=Math.floor(Date.now()/1000);
     const calls=[
-      {to:C.contracts.referral, data:'0xe4b137bc'+BigInt(now).toString(16).padStart(64,'0')},   // currentEffectivePrice(now)
+      {to:(C.contracts.market||C.contracts.referral), data:'0xe4b137bc'+BigInt(now).toString(16).padStart(64,'0')},   // currentEffectivePrice(now) ← Market
       {to:C.tokens.CHIHE,          data:'0x70a08231'+addr.toLowerCase().replace('0x','').padStart(64,'0')}  // balanceOf
     ];
     const res = await batchEthCall(calls, 10000);
@@ -2271,7 +2272,7 @@ async function loadTradePage(){
 
     // 市場資訊（價格 + 餘額）
     const now = Math.floor(Date.now()/1000);
-    add('price', MINING, '0xe4b137bc' + BigInt(now).toString(16).padStart(64,'0'));
+    add('price', (C.contracts.market||MINING), '0xe4b137bc' + BigInt(now).toString(16).padStart(64,'0'));
     if(addr){
       add('bal', C.tokens.CHIHE, '0x70a08231' + _pad32addr(addr));
       add('myOrders', MARKET, '0x63c69f08' + _pad32addr(addr));
