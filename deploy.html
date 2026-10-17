@@ -19,63 +19,70 @@ button{background:linear-gradient(135deg,var(--chi2),var(--chi));color:#fff;bord
 button.b{background:#2a1a1b;color:#e0c8c0}
 button.s{background:#3a2425;color:#e0c8c0;padding:9px 12px;font-size:12px;width:auto}
 button:disabled{opacity:.4;cursor:not-allowed}
-.out{background:#0a0506;border:1px dashed var(--line);border-radius:10px;padding:9px;font-family:monospace;font-size:11px;white-space:pre-wrap;margin:7px 0;color:#c9b3ac;max-height:300px;overflow:auto;line-height:1.65}
-input{width:100%;background:#0d0708;border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:9px;font-family:monospace;font-size:12px;margin:4px 0}
+.out{background:#0a0506;border:1px dashed var(--line);border-radius:10px;padding:9px;font-family:monospace;font-size:11px;white-space:pre-wrap;margin:7px 0;color:#c9b3ac;max-height:320px;overflow:auto;line-height:1.65}
+input{width:100%;background:#0d0708;border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:9px;font-family:monospace;font-size:11px;margin:4px 0}
 .step{background:rgba(242,160,61,.08);border-left:3px solid var(--gold);padding:5px 9px;margin:4px 0;font-size:11.5px}
-.ok{color:var(--ok)}.bad{color:var(--bad)}
+label{display:block;font-size:11px;color:var(--dim);margin-top:8px}
 </style>
 </head>
 <body>
 <h1>赤鶴 CHIHE · 一鍵部署</h1>
-<div class="sub">5 合約 + 4 代理 · owner 錢包操作</div>
+<div class="sub">4 合約（無 Swap、無資金池、純 P2P）</div>
 
 <div class="banner">
-<b>自動依序執行</b>
-<div class="step">① Token（21,000,000 CHIHE 上限）</div>
+<b>🛡️ 安全架構（與 NNB 一致）</b>
+<div class="step">✅ 合約不持有資金（P2P 直轉）</div>
+<div class="step">✅ 無提款函數</div>
+<div class="step">✅ 無直買直賣（buy/sell 已移除）</div>
+<div class="step">✅ 無 Swap、無底池、無 PancakeSwap</div>
+<div class="step">✅ 只保留掛單市場合約</div>
+</div>
+
+<div class="banner">
+<b>自動依序部署</b>
+<div class="step">① Token（21,000,000 CHIHE 硬上限）</div>
 <div class="step">② Mining Impl → Proxy → initialize</div>
 <div class="step">③ Market Impl → Proxy → initialize</div>
-<div class="step">④ Swap Impl → Proxy → initialize</div>
-<div class="step">⑤ Info（唯讀合約）</div>
-<div class="step">⑥ 設定關聯（Mining↔Market、burnTarget）</div>
+<div class="step">④ Info（唯讀）</div>
+<div class="step">⑤ 設定關聯（Mining↔Market、burnTarget）</div>
+<div class="step">⑥ Token.setMiningContract（雙重 mint）</div>
 <div class="step">⑦ mint 2100 萬到 owner</div>
 </div>
 
 <div class="warn">
-⚠️ <b>部署前必看</b><br>
+⚠️ <b>部署前確認</b><br>
 ・錢包在 <b>BSC 主網</b>（chainId 56）<br>
-・BNB <b>≥ 0.08</b>（gas 總計約 0.05-0.07）<br>
-・用 <b>owner 錢包</b> 部署（部署者 = owner）<br>
-・全程約 3-5 分鐘
+・owner 錢包有 <b>≥ 0.08 BNB</b>（你目前 0.12 ✅）<br>
+・用 <b>管理錢包</b> 部署：<code>0xeDA4...4F22</code><br>
+・全程約 3-4 分鐘
 </div>
 
 <div class="card">
-<h3>① 連接錢包</h3>
+<h3>① 連接錢包（管理錢包）</h3>
 <button onclick="connect()">连接钱包</button>
 <div class="out" id="conn">未連線</div>
 </div>
 
 <div class="card">
-<h3>② 收款地址</h3>
-<label style="font-size:11px;color:var(--dim)">feeWallet（手續費 30%）</label>
-<input id="feeWallet" placeholder="0x...">
-<label style="font-size:11px;color:var(--dim)">projectWallet（項目方）</label>
-<input id="projectWallet" placeholder="0x...">
-<label style="font-size:11px;color:var(--dim)">coldWallet（冷錢包）</label>
-<input id="coldWallet" placeholder="0x...">
-<label style="font-size:11px;color:var(--dim)">contribWallet（貢獻值收款）</label>
-<input id="contribWallet" placeholder="0x...">
-<button class="s" onclick="fillSelf()">全部用 owner 地址</button>
+<h3>② 收款地址（已預填）</h3>
+<label>feeWallet（手續費 30%）</label>
+<input id="feeWallet" readonly>
+<label>projectWallet（項目方）</label>
+<input id="projectWallet" readonly>
+<label>coldWallet（冷錢包）</label>
+<input id="coldWallet" readonly>
+<label>contribWallet（貢獻值收款）</label>
+<input id="contribWallet" readonly>
 </div>
 
 <div class="card" style="border-color:rgba(217,37,30,.5)">
 <h3 style="color:var(--gold)">③ 部署</h3>
-<button id="btnDeploy" onclick="deployAll()" disabled>开始部署（5 合约）</button>
+<button id="btnDeploy" onclick="deployAll()" disabled>开始部署（4 合约）</button>
 <div class="out" id="out">—</div>
 </div>
 
 <div class="card">
-<h3>④ 結果</h3>
-<button class="b" onclick="showAddrs()">显示地址</button>
+<h3>④ 結果（部署後前端要填的地址）</h3>
 <button class="b" onclick="copyAddrs()">複製全部</button>
 <div class="out" id="addrs">—</div>
 </div>
@@ -86,6 +93,14 @@ var ADD={};
 function $(i){return document.getElementById(i);}
 function L(id,t){var e=$(id);e.textContent+='\n'+t;e.scrollTop=e.scrollHeight;}
 function clr(id){$(id).textContent='';}
+
+window.addEventListener('DOMContentLoaded',function(){
+  var w=CHIHE.const.wallets||{};
+  $('feeWallet').value=w.feeWallet||'';
+  $('projectWallet').value=w.projectWallet||'';
+  $('coldWallet').value=w.coldWallet||'';
+  $('contribWallet').value=w.projectWallet||'';  // 貢獻值收款先用項目方
+});
 
 async function connect(){
   if(!window.ethereum){L('conn','❌ 未偵測到錢包（請用 TP 內建瀏覽器）');return;}
@@ -100,16 +115,17 @@ async function connect(){
     var b=Number(ethers.utils.formatEther(bal));
     L('conn','✅ 已連線: '+acct);
     L('conn','   BNB: '+b.toFixed(4));
-    if(b<0.05){ L('conn','⚠️ BNB 偏低（建議 ≥0.08），可能不夠 gas'); }
-    else { L('conn','✅ gas 充足'); }
-    $('btnDeploy').disabled=false;
-    fillSelf();
+    var OWNER=CHIHE.const.wallets.owner;
+    if(acct.toLowerCase()!==OWNER.toLowerCase()){
+      L('conn','⚠️ 這不是管理錢包！');
+      L('conn','   預期: '+OWNER);
+      L('conn','   → 部署者將成為 owner，請確認');
+    } else {
+      L('conn','✅ 管理錢包確認');
+    }
+    if(b<0.05){ L('conn','⚠️ BNB 偏低，需 ≥0.08'); }
+    else { L('conn','✅ gas 充足'); $('btnDeploy').disabled=false; }
   }catch(e){L('conn','❌ '+String(e.message||e).slice(0,150));}
-}
-
-function fillSelf(){
-  if(!acct) return;
-  ['feeWallet','projectWallet','coldWallet','contribWallet'].forEach(function(id){$(id).value=acct;});
 }
 
 async function deployAll(){
@@ -119,11 +135,12 @@ async function deployAll(){
   var projW=$('projectWallet').value.trim();
   var coldW=$('coldWallet').value.trim();
   var contW=$('contribWallet').value.trim();
-  if(!ethers.utils.isAddress(feeW)||!ethers.utils.isAddress(projW)||!ethers.utils.isAddress(coldW)||!ethers.utils.isAddress(contW)){
+  if(![feeW,projW,coldW,contW].every(function(a){return ethers.utils.isAddress(a);})){
     L('out','❌ 地址格式錯誤');return;
   }
   $('btnDeploy').disabled=true;
   var USDT=CHIHE.const.USDT, BURN=CHIHE.const.burnTarget, SUPPLY=CHIHE.const.TOTAL_SUPPLY;
+  var fP=new ethers.ContractFactory(CHIHE.Proxy.abi, CHIHE.Proxy.bytecode, signer);
 
   try{
     // ① Token
@@ -142,12 +159,11 @@ async function deployAll(){
     var mImpl=await fM.deploy({gasLimit:7000000}); await mImpl.deployed();
     ADD.miningImpl=mImpl.address;
     L('out','  impl: '+mImpl.address);
-    var fP=new ethers.ContractFactory(CHIHE.Proxy.abi, CHIHE.Proxy.bytecode, signer);
     var initData=new ethers.utils.Interface(CHIHE.Mining.abi).encodeFunctionData('initialize',[ADD.token, USDT, BURN, projW, coldW, contW]);
     var mProxy=await fP.deploy(mImpl.address, initData, {gasLimit:4000000}); await mProxy.deployed();
     ADD.mining=mProxy.address;
     L('out','  proxy: '+ADD.mining);
-    L('out','  ✅ Mining 完成（已初始化）');
+    L('out','  ✅ Mining 完成');
 
     // ③ Market
     L('out','');
@@ -162,67 +178,57 @@ async function deployAll(){
     L('out','  proxy: '+ADD.market);
     L('out','  ✅ Market 完成');
 
-    // ④ Swap
+    // ④ Info
     L('out','');
-    L('out','=== ④ Swap ===');
-    var fS=new ethers.ContractFactory(CHIHE.Swap.abi, CHIHE.Swap.bytecode, signer);
-    var sImpl=await fS.deploy({gasLimit:3000000}); await sImpl.deployed();
-    ADD.swapImpl=sImpl.address;
-    L('out','  impl: '+sImpl.address);
-    var initData3=new ethers.utils.Interface(CHIHE.Swap.abi).encodeFunctionData('initialize',[ADD.token, USDT]);
-    var sProxy=await fP.deploy(sImpl.address, initData3, {gasLimit:2500000}); await sProxy.deployed();
-    ADD.swap=sProxy.address;
-    L('out','  proxy: '+ADD.swap);
-    L('out','  ✅ Swap 完成');
-
-    // ⑤ Info
-    L('out','');
-    L('out','=== ⑤ Info ===');
+    L('out','=== ④ Info ===');
     var fI=new ethers.ContractFactory(CHIHE.Info.abi, CHIHE.Info.bytecode, signer);
-    var info=await fI.deploy(ADD.mining, ADD.swap, {gasLimit:1500000}); await info.deployed();
+    var info=await fI.deploy(ADD.mining, ADD.market, {gasLimit:1500000}); await info.deployed();
     ADD.info=info.address;
     L('out','  ✅ Info: '+ADD.info);
 
-    // ⑥ 設定關聯
+    // ⑤ 設定關聯
     L('out','');
-    L('out','=== ⑥ 設定關聯 ===');
+    L('out','=== ⑤ 設定關聯 ===');
     var miningC=new ethers.Contract(ADD.mining, CHIHE.Mining.abi, signer);
     var marketC=new ethers.Contract(ADD.market, CHIHE.Market.abi, signer);
-
-    L('out','  設定 Mining.marketContract...');
-    var t1=await miningC.setMarketContract(ADD.market,{gasLimit:200000}); await t1.wait();
-    L('out','  ✅');
-
-    L('out','  設定 Market.miningContract...');
-    var t2=await marketC.setMiningContract(ADD.mining,{gasLimit:200000}); await t2.wait();
-    L('out','  ✅');
-
-    L('out','  設定 Market.burnTarget...');
-    var t3=await marketC.setBurnTarget(BURN,{gasLimit:200000}); await t3.wait();
-    L('out','  ✅');
-
-    L('out','  設定 Token.miningContract（雙重 mint 授權）...');
     var tokenC=new ethers.Contract(ADD.token, CHIHE.Token.abi, signer);
-    var t4=await tokenC.setMiningContract(ADD.mining,{gasLimit:200000}); await t4.wait();
-    L('out','  ✅ Token.miningContract = Mining');
-    L('out','  （owner 保留，你仍可手動 mint）');
 
-    // ⑦ mint 2100 萬到 owner
+    L('out','  Mining.setMarketContract...');
+    await (await miningC.setMarketContract(ADD.market,{gasLimit:200000})).wait();
+    L('out','  ✅');
+
+    L('out','  Market.setMiningContract...');
+    await (await marketC.setMiningContract(ADD.mining,{gasLimit:200000})).wait();
+    L('out','  ✅');
+
+    L('out','  Market.setBurnTarget...');
+    await (await marketC.setBurnTarget(BURN,{gasLimit:200000})).wait();
+    L('out','  ✅');
+
+    // ⑥ Token 雙重 mint 授權
     L('out','');
-    L('out','=== ⑦ mint 2100 萬 CHIHE 到 owner ===');
-    var t5=await tokenC.mint(acct, SUPPLY, {gasLimit:300000}); await t5.wait();
+    L('out','=== ⑥ Token.setMiningContract（雙重 mint）===');
+    await (await tokenC.setMiningContract(ADD.mining,{gasLimit:200000})).wait();
+    L('out','  ✅ owner 保留 + Mining 可 mint');
+
+    // ⑦ mint 2100 萬
+    L('out','');
+    L('out','=== ⑦ mint 2100 萬 CHIHE ===');
+    await (await tokenC.mint(acct, SUPPLY, {gasLimit:300000})).wait();
     var ts=await tokenC.totalSupply();
     L('out','  ✅ 已 mint '+(Number(ethers.utils.formatUnits(ts,18))).toLocaleString()+' CHIHE');
-    L('out','  → 到地址: '+acct);
+    L('out','  → 到: '+acct);
 
     L('out','');
-    L('out','🎉 部署完成！');
+    L('out','🎉🎉 部署完成！');
+    L('out','');
+    L('out','=== 前端要填的地址 ===');
     showAddrs();
   }catch(e){
     L('out','');
     L('out','❌ 部署失敗: '+String(e.reason||e.message||e).slice(0,300));
     L('out','');
-    L('out','已部署的合約:');
+    L('out','已成功的部分:');
     showAddrs();
   }
   $('btnDeploy').disabled=false;
@@ -231,13 +237,16 @@ async function deployAll(){
 function showAddrs(){
   clr('addrs');
   if(Object.keys(ADD).length===0){L('addrs','（尚無）');return;}
-  for(var k in ADD) L('addrs',k+': '+ADD[k]);
+  var order=['token','mining','market','info','miningImpl','marketImpl'];
+  order.forEach(function(k){ if(ADD[k]) L('addrs',k+': '+ADD[k]); });
 }
 
 function copyAddrs(){
   var s='';
   for(var k in ADD) s+=k+': '+ADD[k]+'\n';
-  navigator.clipboard.writeText(s).then(function(){alert('已複製');});
+  if(!s){alert('尚無地址');return;}
+  if(navigator.clipboard){navigator.clipboard.writeText(s).then(function(){alert('已複製');});}
+  else{alert(s);}
 }
 </script>
 </body>
