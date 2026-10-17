@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>赤鶴 · 價格與貢獻值調整</title>
+<script src="ethers.min.js"></script>
+<script src="fix-data.js"></script>
+<style>
+:root{--chi:#D9251E;--chi2:#FF5A3C;--gold:#F2A03D;--bg:#14090A;--card:#241314;--line:#3A1E1F;--txt:#F5EAE3;--dim:#9C8178;--ok:#37d67a}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--txt);padding:14px;font-size:14px}
+h1{color:var(--gold);font-size:18px;margin:6px 0 8px}
+h3{font-size:14px;margin:10px 0 6px}
+.sub{color:var(--dim);font-size:12px;margin-bottom:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0}
+.banner{background:rgba(242,160,61,.1);border:1px solid rgba(242,160,61,.35);color:#ffd48a;padding:10px;border-radius:10px;font-size:12px;line-height:1.8;margin:10px 0}
+button{background:linear-gradient(135deg,var(--chi2),var(--chi));color:#fff;border:none;padding:12px;border-radius:9px;font-weight:700;cursor:pointer;margin:5px 0 0;font-size:13px;width:100%;font-family:inherit}
+button.b{background:#2a1a1b;color:#e0c8c0}
+button:disabled{opacity:.4}
+.out{background:#0a0506;border:1px dashed var(--line);border-radius:10px;padding:9px;font-family:monospace;font-size:11px;white-space:pre-wrap;margin:7px 0;color:#c9b3ac;max-height:340px;overflow:auto;line-height:1.6}
+table{width:100%;border-collapse:collapse;font-size:11.5px;margin:6px 0}
+td,th{border:1px solid var(--line);padding:5px 7px}
+th{background:#0d0708;color:var(--dim);text-align:left}
+</style>
+</head>
+<body>
+<h1>赤鶴 · 價格與貢獻值調整</h1>
+<div class="sub">三項調整一次完成</div>
+
+<div class="banner">
+<b>本次調整</b>
+<table>
+<tr><th>項目</th><th>當前</th><th>目標</th></tr>
+<tr><td>price</td><td>0.014050</td><td><b>0.014305</b>（與 NNB 當前一致）</td></tr>
+<tr><td>contributionMultiplier</td><td>4</td><td><b>3</b></td></tr>
+<tr><td>contribOldUserCap</td><td>1200 U</td><td><b>600 U</b></td></tr>
+</table>
+</div>
+
+<div class="card">
+<h3>① 連接錢包（owner）</h3>
+<button onclick="connect()">连接钱包</button>
+<div class="out" id="conn">未連線</div>
+</div>
+
+<div class="card" style="border-color:rgba(55,214,122,.4)">
+<h3 style="color:var(--gold)">② 執行調整</h3>
+<button id="btnGo" onclick="doAll()" disabled>开始调整（3 项）</button>
+<div class="out" id="out">—</div>
+</div>
+
+<div class="card">
+<h3>③ 驗證</h3>
+<button class="b" onclick="verify()">重新驗證</button>
+<div class="out" id="vout">—</div>
+</div>
+
+<script>
+var provider, signer, acct=null;
+var K=FIX.deployed.market, M=FIX.deployed.mining;
+function $(i){return document.getElementById(i);}
+function L(id,t){var e=$(id);e.textContent+='\n'+t;e.scrollTop=e.scrollHeight;}
+function clr(id){$(id).textContent='';}
+
+var MARKET_ABI=[
+ 'function price() view returns(uint256)',
+ 'function priceDelay() view returns(uint256)',
+ 'function pendingPrice() view returns(uint256)',
+ 'function proposePrice(uint256)',
+ 'function executePrice()',
+ 'function setPriceDelay(uint256)',
+ 'function currentEffectivePrice(uint256) view returns(uint256)'
+];
+var MINING_ABI=[
+ 'function contributionMultiplier() view returns(uint256)',
+ 'function contribOldUserCap() view returns(uint256)',
+ 'function setContribParams(uint256,uint256)'
+];
+
+async function connect(){
+  if(!window.ethereum){L('conn','❌ 未偵測到錢包');return;}
+  try{
+    provider=new ethers.providers.Web3Provider(window.ethereum);
+    var net=await provider.getNetwork();
+    if(net.chainId!==56){L('conn','❌ 非 BSC 主網');return;}
+    await window.ethereum.request({method:'eth_requestAccounts'});
+    signer=provider.getSigner();
+    acct=await signer.getAddress();
+    var b=Number(ethers.utils.formatEther(await provider.getBalance(acct)));
+    L('conn','✅ 已連線: '+acct);
+    L('conn','   BNB: '+b.toFixed(4));
+    if(b<0.01){L('conn','⚠️ BNB 偏低（需 0.01）');}
+    else{$('btnGo').disabled=false;L('conn','✅ 可執行');}
+    await verify();
+  }catch(e){L('conn','❌ '+String(e.message||e).slice(0,120));}
+}
+
+async function doAll(){
+  clr('out');
+  if(!signer){L('out','❌ 請連接錢包');return;}
+  $('btnGo').disabled=true;
+  try{
+    var kc=new ethers.Contract(K, MARKET_ABI, signer);
+    var mc=new ethers.Contract(M, MINING_ABI, signer);
+
+    // ① 設定價格 0.014305
+    L('out','=== ① 設定 price = 0.014305 ===');
+    var target='14305000000000000';
+    L('out','  確認 priceDelay = 0...');
+    var d=await kc.priceDelay();
+    if(Number(d)!==0){
+      L('out','  priceDelay = '+d.toString()+'秒，先設成 0');
+      await (await kc.setPriceDelay(0,{gasLimit:200000})).wait();
+      L('out','  ✅ priceDelay = 0');
+    } else {
+      L('out','  ✅ priceDelay 已是 0');
+    }
+    L('out','  proposePrice(0.014305)...');
+    await (await kc.proposePrice(target,{gasLimit:200000})).wait();
+    L('out','  ✅ 已提出');
+    L('out','  executePrice()...');
+    await (await kc.executePrice({gasLimit:200000})).wait();
+    var np=await kc.price();
+    L('out','  ✅ price = '+(Number(np)/1e18));
+
+    // ② 貢獻值倍數 3 + 額度 600
+    L('out','');
+    L('out','=== ② 設定貢獻值：倍數 3、額度 600 U ===');
+    await (await mc.setContribParams(3, ethers.utils.parseUnits('600',18), {gasLimit:200000})).wait();
+    var nm=await mc.contributionMultiplier();
+    var nc=await mc.contribOldUserCap();
+    L('out','  ✅ contributionMultiplier = '+nm.toString());
+    L('out','  ✅ contribOldUserCap = '+(Number(ethers.utils.formatUnits(nc,18)))+' U');
+
+    L('out','');
+    L('out','🎉 三項調整完成！');
+    await verify();
+  }catch(e){
+    L('out','');
+    L('out','❌ 失敗: '+String(e.reason||e.message||e).slice(0,250));
+  }
+  $('btnGo').disabled=false;
+}
+
+async function verify(){
+  clr('vout');
+  try{
+    var rp=provider||new ethers.providers.JsonRpcProvider('https://bsc-dataseed.binance.org');
+    var kc=new ethers.Contract(K, MARKET_ABI, rp);
+    var mc=new ethers.Contract(M, MINING_ABI, rp);
+    var now=Math.floor(Date.now()/1000);
+    L('vout','=== Market ===');
+    var p=await kc.price();
+    L('vout','  price:            '+(Number(p)/1e18)+' '+(Number(p)===14305000000000000?'✅':'⚠️ 應 0.014305'));
+    var eff=await kc.currentEffectivePrice(now);
+    L('vout','  當前生效價:        '+(Number(eff)/1e18));
+    L('vout','');
+    L('vout','=== Mining ===');
+    var m=await mc.contributionMultiplier();
+    L('vout','  貢獻值倍數:        '+m.toString()+' '+(Number(m)===3?'✅':'⚠️ 應 3'));
+    var c=await mc.contribOldUserCap();
+    L('vout','  新用戶額度上限:    '+(Number(ethers.utils.formatUnits(c,18)))+' U '+(Number(ethers.utils.formatUnits(c,18))===600?'✅':'⚠️ 應 600'));
+  }catch(e){L('vout','❌ '+String(e.message||e).slice(0,150));}
+}
+</script>
+</body>
+</html>
