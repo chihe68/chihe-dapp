@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>赤鶴 CHIHE · 補完部署</title>
+<script src="ethers.min.js"></script>
+<script src="fix-data.js"></script>
+<style>
+:root{--chi:#D9251E;--chi2:#FF5A3C;--gold:#F2A03D;--bg:#14090A;--card:#241314;--line:#3A1E1F;--txt:#F5EAE3;--dim:#9C8178;--ok:#37d67a}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--txt);padding:14px;font-size:14px}
+h1{color:var(--gold);font-size:18px;margin:6px 0 8px}
+h3{font-size:14px;margin:10px 0 6px}
+.sub{color:var(--dim);font-size:12px;margin-bottom:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0}
+.banner{background:rgba(55,214,122,.1);border:1px solid rgba(55,214,122,.4);color:#b6ff48;padding:10px;border-radius:10px;font-size:12px;line-height:1.7;margin:10px 0}
+.warn{background:rgba(242,160,61,.1);border:1px solid rgba(242,160,61,.35);color:#ffd48a;padding:10px;border-radius:10px;font-size:12px;line-height:1.8;margin:10px 0}
+button{background:linear-gradient(135deg,var(--chi2),var(--chi));color:#fff;border:none;padding:12px;border-radius:9px;font-weight:700;cursor:pointer;margin:5px 0 0;font-size:13px;width:100%;font-family:inherit}
+button:disabled{opacity:.4}
+.out{background:#0a0506;border:1px dashed var(--line);border-radius:10px;padding:9px;font-family:monospace;font-size:11px;white-space:pre-wrap;margin:7px 0;color:#c9b3ac;max-height:340px;overflow:auto;line-height:1.6}
+.ok{color:var(--ok)}
+input{width:100%;background:#0d0708;border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px;font-family:monospace;font-size:11px;margin:3px 0}
+</style>
+</head>
+<body>
+<h1>赤鶴 CHIHE · 補完部署</h1>
+<div class="sub">部署 Info + 完成所有設定</div>
+
+<div class="banner">
+<b>已成功部署的合約</b><br>
+Token:  0x245C...515F<br>
+Mining: 0x46E2...bd9C<br>
+Market: 0x38aE...dADA<br>
+<br>
+<b>本頁會完成</b>
+<div style="margin-top:6px;font-size:11.5px;line-height:1.8">
+① 部署 Info（已修復 swap 依賴）<br>
+② 設定 Mining.marketContract<br>
+③ 設定 Market.miningContract<br>
+④ 設定 Market.burnTarget<br>
+⑤ 設定 Token.miningContract<br>
+⑥ mint 2100 萬 CHIHE<br>
+⑦ 設定 Mining 參數（倍數 4、門檻 714）
+</div>
+</div>
+
+<div class="card">
+<h3>① 連接錢包（owner）</h3>
+<button onclick="connect()">连接钱包</button>
+<div class="out" id="conn">未連線</div>
+</div>
+
+<div class="card" style="border-color:rgba(55,214,122,.4)">
+<h3 style="color:var(--gold)">② 執行補完</h3>
+<button id="btnGo" onclick="doFix()" disabled>开始補完（7 步）</button>
+<div class="out" id="out">—</div>
+</div>
+
+<script>
+var provider, signer, acct=null;
+var D=FIX.deployed;
+function $(i){return document.getElementById(i);}
+function L(id,t){var e=$(id);e.textContent+='\n'+t;e.scrollTop=e.scrollHeight;}
+function clr(id){$(id).textContent='';}
+
+async function connect(){
+  if(!window.ethereum){L('conn','❌ 未偵測到錢包');return;}
+  try{
+    provider=new ethers.providers.Web3Provider(window.ethereum);
+    var net=await provider.getNetwork();
+    if(net.chainId!==56){L('conn','❌ 非 BSC 主網');return;}
+    await window.ethereum.request({method:'eth_requestAccounts'});
+    signer=provider.getSigner();
+    acct=await signer.getAddress();
+    var b=Number(ethers.utils.formatEther(await provider.getBalance(acct)));
+    L('conn','✅ 已連線: '+acct);
+    L('conn','   BNB: '+b.toFixed(4));
+    if(b<0.03){L('conn','⚠️ BNB 偏低（需 ≥0.03）');}
+    else{$('btnGo').disabled=false;L('conn','✅ 可執行');}
+  }catch(e){L('conn','❌ '+String(e.message||e).slice(0,120));}
+}
+
+async function doFix(){
+  clr('out');
+  if(!signer){L('out','❌ 請連接錢包');return;}
+  $('btnGo').disabled=true;
+  var W=FIX.const.wallets, BURN=FIX.const.burnTarget;
+  var T=D.token, M=D.mining, K=D.market;
+
+  try{
+    // ① 部署 Info
+    L('out','=== ① 部署 Info ===');
+    var fI=new ethers.ContractFactory(FIX.Info.abi, FIX.Info.bytecode, signer);
+    var info=await fI.deploy(M, ethers.constants.AddressZero, {gasLimit:1500000});
+    L('out','  tx: '+info.deployTransaction.hash);
+    await info.deployed();
+    L('out','  ✅ Info: '+info.address);
+
+    var miningC=new ethers.Contract(M, FIX.Mining.abi, signer);
+    var marketC=new ethers.Contract(K, FIX.Market.abi, signer);
+    var tokenC=new ethers.Contract(T, FIX.Token.abi, signer);
+
+    // ② Mining.marketContract
+    L('out','');
+    L('out','=== ② 設定 Mining.marketContract ===');
+    await (await miningC.setMarketContract(K,{gasLimit:200000})).wait();
+    L('out','  ✅ '+K);
+
+    // ③ Market.miningContract
+    L('out','');
+    L('out','=== ③ 設定 Market.miningContract ===');
+    await (await marketC.setMiningContract(M,{gasLimit:200000})).wait();
+    L('out','  ✅ '+M);
+
+    // ④ Market.burnTarget
+    L('out','');
+    L('out','=== ④ 設定 Market.burnTarget ===');
+    await (await marketC.setBurnTarget(BURN,{gasLimit:200000})).wait();
+    L('out','  ✅ '+BURN);
+
+    // ⑤ Token.miningContract
+    L('out','');
+    L('out','=== ⑤ 設定 Token.miningContract ===');
+    await (await tokenC.setMiningContract(M,{gasLimit:200000})).wait();
+    L('out','  ✅ '+M);
+
+    // ⑥ mint 2100 萬
+    L('out','');
+    L('out','=== ⑥ mint 2100 萬 CHIHE ===');
+    await (await tokenC.mint(acct, FIX.const.TOTAL_SUPPLY, {gasLimit:300000})).wait();
+    var ts=await tokenC.totalSupply();
+    L('out','  ✅ totalSupply: '+(Number(ethers.utils.formatUnits(ts,18))).toLocaleString());
+
+    // ⑦ Mining 參數
+    L('out','');
+    L('out','=== ⑦ 設定 Mining 參數 ===');
+    L('out','  設定 contributionMultiplier=4, contribOldUserCap=1200...');
+    await (await miningC.setContribParams(4, ethers.utils.parseUnits('1200',18), {gasLimit:200000})).wait();
+    L('out','  ✅ 貢獻值倍數 = 4');
+
+    L('out','  設定 minBuyMining=714 NNB...');
+    await (await miningC.setMinBuyMining(ethers.utils.parseUnits('714',18), {gasLimit:200000})).wait();
+    L('out','  ✅ 買礦機門檻 = 714 NNB');
+
+    // 完成
+    L('out','');
+    L('out','🎉🎉 補完成功！');
+    L('out','');
+    L('out','=== 最終地址 ===');
+    L('out','token:  '+T);
+    L('out','mining: '+M);
+    L('out','market: '+K);
+    L('out','info:   '+info.address);
+    L('out','');
+    L('out','=== 驗證 ===');
+    var mc=await marketC.miningContract();
+    var mk=await miningC.marketContract();
+    var bt=await marketC.burnTarget();
+    var mult=await miningC.contributionMultiplier();
+    L('out','Market.miningContract: '+mc+' '+(mc.toLowerCase()===M.toLowerCase()?'✅':'❌'));
+    L('out','Mining.marketContract: '+mk+' '+(mk.toLowerCase()===K.toLowerCase()?'✅':'❌'));
+    L('out','Market.burnTarget:     '+bt+' '+(bt.toLowerCase()===BURN.toLowerCase()?'✅':'❌'));
+    L('out','貢獻值倍數: '+mult.toString()+' '+(Number(mult)===4?'✅':'❌'));
+  }catch(e){
+    L('out','');
+    L('out','❌ 失敗: '+String(e.reason||e.message||e).slice(0,250));
+  }
+  $('btnGo').disabled=false;
+}
+</script>
+</body>
+</html>
